@@ -14,12 +14,10 @@ export default function App() {
 
     try {
       setLoading(true);
-
       const res = await axios.post(
         "http://localhost:3000/api/resume/upload",
         formData
       );
-
       setResult(res.data.data.analysis);
     } catch (err) {
       console.error(err);
@@ -33,23 +31,24 @@ export default function App() {
     <div style={styles.container}>
       <h1 style={styles.title}>🚀 AI Resume Analyzer</h1>
 
+      {/* Upload Card */}
       <div style={styles.card}>
         <input
           type="file"
           onChange={(e) => setFile(e.target.files[0])}
+          style={styles.input}
         />
-        <br /><br />
         <button onClick={upload} style={styles.button}>
-          Upload Resume
+          Analyze Resume
         </button>
       </div>
 
-      {loading && <p style={{ marginTop: 20 }}>⏳ Analyzing...</p>}
+      {loading && <p style={styles.loading}>⏳ Analyzing your resume...</p>}
 
       {result && (
         <div style={styles.resultCard}>
-          {/* ATS Score */}
-          <h2>ATS Score</h2>
+          {/* Score */}
+          <h2>📊 ATS Score</h2>
           <div style={styles.progressBar}>
             <div
               style={{
@@ -62,101 +61,136 @@ export default function App() {
           </div>
 
           {/* Skills */}
-          <h3>✅ Skills</h3>
-          <div style={styles.tags}>
+          <Section title="✅ Skills">
             {result.skills.map((skill, i) => (
-              <span key={i} style={styles.tagGreen}>{skill}</span>
+              <Tag key={i} text={skill} type="green" />
             ))}
-          </div>
+          </Section>
 
           {/* Missing Skills */}
-          <h3>❌ Missing Skills</h3>
-          <div style={styles.tags}>
+          <Section title="❌ Missing Skills">
             {result.missingSkills.map((skill, i) => (
-              <span key={i} style={styles.tagRed}>{skill}</span>
+              <Tag key={i} text={skill} type="red" />
             ))}
-          </div>
+          </Section>
 
           {/* Suggestions */}
-          <h3>💡 Suggestions</h3>
-          <ul>
-            {result.suggestions.map((s, i) => (
-              <li key={i}>{s}</li>
-            ))}
-          </ul>
+          <Section title="💡 Suggestions">
+            <ul style={{ paddingLeft: "20px" }}>
+              {result.suggestions.map((s, i) => (
+                <li key={i} style={{ marginBottom: "5px" }}>{s}</li>
+              ))}
+            </ul>
+          </Section>
         </div>
       )}
     </div>
   );
 }
+
+/* 🔹 Reusable Components */
+
+const Section = ({ title, children }) => (
+  <div style={{ marginTop: "20px" }}>
+    <h3>{title}</h3>
+    <div style={{ marginTop: "10px" }}>{children}</div>
+  </div>
+);
+
+const Tag = ({ text, type }) => (
+  <span
+    style={{
+      ...styles.tag,
+      background: type === "green" ? "#22c55e" : "#ef4444",
+    }}
+  >
+    {text}
+  </span>
+);
+
+/* 🎨 Styles */
+
 const styles = {
   container: {
     textAlign: "center",
-    fontFamily: "Arial",
+    fontFamily: "Segoe UI, sans-serif",
     padding: "20px",
-    background: "#f5f7fa",
     minHeight: "100vh",
+    background: "linear-gradient(to right, #667eea, #764ba2)",
+    color: "#333",
   },
+
   title: {
-    marginBottom: "20px",
+    color: "white",
+    marginBottom: "30px",
+    fontSize: "2rem",
   },
+
   card: {
     background: "white",
-    padding: "20px",
-    borderRadius: "10px",
-    boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+    padding: "25px",
+    borderRadius: "15px",
+    boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
     display: "inline-block",
   },
+
+  input: {
+    marginBottom: "15px",
+  },
+
   button: {
-    padding: "10px 20px",
-    background: "black",
+    padding: "12px 25px",
+    background: "#111",
     color: "white",
     border: "none",
-    borderRadius: "5px",
+    borderRadius: "8px",
     cursor: "pointer",
+    fontSize: "16px",
+    transition: "0.3s",
   },
+
+  loading: {
+    color: "white",
+    marginTop: "20px",
+    fontSize: "18px",
+  },
+
   resultCard: {
     marginTop: "30px",
     background: "white",
-    padding: "20px",
-    borderRadius: "10px",
+    padding: "25px",
+    borderRadius: "15px",
     width: "60%",
     marginInline: "auto",
-    boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+    boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
     textAlign: "left",
   },
+
   progressBar: {
     width: "100%",
-    height: "25px",
-    background: "#ddd",
-    borderRadius: "10px",
+    height: "30px",
+    background: "#e5e7eb",
+    borderRadius: "20px",
     overflow: "hidden",
     marginBottom: "15px",
   },
+
   progressFill: {
     height: "100%",
-    background: "green",
+    background: "linear-gradient(to right, #22c55e, #16a34a)",
     color: "white",
     textAlign: "center",
-    lineHeight: "25px",
+    lineHeight: "30px",
+    fontWeight: "bold",
+    transition: "width 0.5s ease",
   },
-  tags: {
-    marginBottom: "15px",
-  },
-  tagGreen: {
-    background: "#4caf50",
+
+  tag: {
     color: "white",
-    padding: "5px 10px",
+    padding: "6px 12px",
     margin: "5px",
-    borderRadius: "5px",
+    borderRadius: "20px",
     display: "inline-block",
-  },
-  tagRed: {
-    background: "#f44336",
-    color: "white",
-    padding: "5px 10px",
-    margin: "5px",
-    borderRadius: "5px",
-    display: "inline-block",
+    fontSize: "14px",
   },
 };
