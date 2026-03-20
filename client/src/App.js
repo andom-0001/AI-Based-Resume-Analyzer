@@ -89,10 +89,6 @@ export default function App() {
     </div>
   );
 }
-
-// =============================
-// 🎨 STYLES
-// =============================
 const styles = {
   container: {
     textAlign: "center",
