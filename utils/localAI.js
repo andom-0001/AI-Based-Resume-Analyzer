@@ -22,29 +22,12 @@ export const analyzeResumeLocal = (text) => {
 
   const suggestions = [];
 
-  if (score < 50) {
-    suggestions.push("Your resume is weak for ATS. Add more keywords.");
-  }
-
-  if (foundSkills.length < 5) {
-    suggestions.push("Add more technical skills.");
-  }
-
-  if (!text.includes("project")) {
-    suggestions.push("Add strong projects.");
-  }
-
-  if (!text.includes("experience")) {
-    suggestions.push("Add experience or internship.");
-  }
-
-  if (!text.includes("github")) {
-    suggestions.push("Add GitHub profile.");
-  }
-
-  if (text.length < 300) {
-    suggestions.push("Increase resume content.");
-  }
+  if (score < 50) suggestions.push("Improve keywords for ATS.");
+  if (foundSkills.length < 5) suggestions.push("Add more skills.");
+  if (!text.includes("project")) suggestions.push("Add projects.");
+  if (!text.includes("experience")) suggestions.push("Add experience.");
+  if (!text.includes("github")) suggestions.push("Add GitHub.");
+  if (text.length < 300) suggestions.push("Increase content.");
 
   return {
     atsScore: Math.round(score),

@@ -14,33 +14,29 @@ export default function App() {
 
   const [template, setTemplate] = useState("modern");
   const [file, setFile] = useState(null);
-
   const [result, setResult] = useState(null);
   const [resumeHTML, setResumeHTML] = useState(null);
   const [pdfPreview, setPdfPreview] = useState(null);
-  const [dragActive, setDragActive] = useState(false);
 
-  // 🔹 GENERATE RESUME
+  // GENERATE
   const generateResume = async () => {
     const res = await axios.post(
       "http://localhost:3000/api/resume/generate",
       {
         ...form,
         template,
-        skills: form.skills.split(","),
-        projects: form.projects.split(","),
+        skills: form.skills.split(",").map(s => s.trim()).filter(Boolean),
+        projects: form.projects.split(",").map(p => p.trim()).filter(Boolean),
       }
     );
 
     setResult(res.data.analysis);
     setResumeHTML(res.data.resume);
-    setPdfPreview(null); // clear PDF preview
+    setPdfPreview(null);
   };
 
-  // 🔹 UPLOAD RESUME (PDF)
+  // UPLOAD
   const uploadResume = async () => {
-    if (!file) return alert("Select file");
-
     const formData = new FormData();
     formData.append("resume", file);
 
@@ -50,37 +46,17 @@ export default function App() {
     );
 
     setResult(res.data.data.analysis);
+    setResumeHTML(null);
 
-    // 🔥 PDF Preview
     const fileURL = URL.createObjectURL(file);
     setPdfPreview(fileURL);
-
-    setResumeHTML(null);
   };
 
-  // 🔹 DRAG HANDLERS
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(e.type === "dragenter" || e.type === "dragover");
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setDragActive(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setFile(e.dataTransfer.files[0]);
-    }
-  };
-
-  // 🔹 DOWNLOAD GENERATED RESUME
   const downloadPDF = () => {
     const element = document.getElementById("resume");
-    html2pdf().from(element).save("My_Resume.pdf");
+    html2pdf().from(element).save();
   };
 
-  // 🔹 CLEANUP
   useEffect(() => {
     return () => {
       if (pdfPreview) URL.revokeObjectURL(pdfPreview);
@@ -89,96 +65,75 @@ export default function App() {
 
   return (
     <div style={styles.container}>
-      <h1>🚀 ATS Resume Builder</h1>
+      <h1 style={styles.title}>🚀 ATS Resume Builder</h1>
 
-      <div style={styles.grid}>
+      <div style={styles.main}>
         
-        {/* LEFT SIDE */}
-        <div style={styles.card}>
+        {/* LEFT PANEL */}
+        <div style={styles.sidebar}>
           <h2>Create Resume</h2>
 
-          {/* TEMPLATE */}
-          <select
-            onChange={(e) => setTemplate(e.target.value)}
-            style={styles.input}
-          >
+          <select style={styles.input}
+            onChange={(e)=>setTemplate(e.target.value)}>
             <option value="modern">Modern</option>
             <option value="classic">Classic</option>
             <option value="minimal">Minimal</option>
           </select>
 
-          {/* FORM */}
-          {Object.keys(form).map((key) => (
-            <input
-              key={key}
-              placeholder={key}
-              onChange={(e) =>
-                setForm({ ...form, [key]: e.target.value })
-              }
-              style={styles.input}
-            />
-          ))}
+          <Input label="Name" value={form.name}
+            onChange={(v)=>setForm({...form,name:v})} />
 
-          <button style={styles.button} onClick={generateResume}>
+          <Input label="Email" value={form.email}
+            onChange={(v)=>setForm({...form,email:v})} />
+
+          <Input label="Skills (comma separated)" value={form.skills}
+            onChange={(v)=>setForm({...form,skills:v})} />
+
+          <Input label="Projects" value={form.projects}
+            onChange={(v)=>setForm({...form,projects:v})} />
+
+          <Input label="Experience" value={form.experience}
+            onChange={(v)=>setForm({...form,experience:v})} />
+
+          <Input label="Education" value={form.education}
+            onChange={(v)=>setForm({...form,education:v})} />
+
+          <button style={styles.primaryBtn} onClick={generateResume}>
             Generate Resume
           </button>
 
-          <hr style={{ margin: "20px 0" }} />
+          <div style={styles.divider}/>
 
-          {/* DRAG & DROP */}
-          <h2>Upload Resume</h2>
+          <h3>Upload Resume</h3>
 
-          <div
-            style={{
-              border: dragActive
-                ? "2px dashed #22c55e"
-                : "2px dashed #ccc",
-              padding: "20px",
-              borderRadius: "10px",
-              textAlign: "center",
-            }}
-            onDragEnter={handleDrag}
-            onDragOver={handleDrag}
-            onDragLeave={handleDrag}
-            onDrop={handleDrop}
-          >
-            <p>📂 Drag & Drop PDF Here</p>
-
-            <input
-              type="file"
-              onChange={(e) => setFile(e.target.files[0])}
-            />
-
-            <button style={styles.button} onClick={uploadResume}>
-              Analyze Resume
+          <div style={styles.drop}>
+            <input type="file"
+              onChange={(e)=>setFile(e.target.files[0])} />
+            <button style={styles.secondaryBtn}
+              onClick={uploadResume}>
+              Analyze PDF
             </button>
           </div>
         </div>
 
-        {/* RIGHT SIDE */}
+        {/* RIGHT PANEL */}
         <div style={styles.preview}>
-          {/* GENERATED RESUME */}
           {resumeHTML ? (
             <>
-              <div
-                id="resume"
-                dangerouslySetInnerHTML={{ __html: resumeHTML }}
-              />
-
-              <button style={styles.button} onClick={downloadPDF}>
+              <div id="resume"
+                dangerouslySetInnerHTML={{__html:resumeHTML}}/>
+              <button style={styles.primaryBtn}
+                onClick={downloadPDF}>
                 Download PDF
               </button>
             </>
           ) : pdfPreview ? (
-            /* PDF PREVIEW */
-            <iframe
-              src={pdfPreview}
-              width="100%"
-              height="500px"
-              title="PDF Preview"
-            />
+            <iframe src={pdfPreview}
+              width="100%" height="600px"/>
           ) : (
-            <p>Preview will appear here</p>
+            <div style={styles.empty}>
+              <p>✨ Your Resume Preview will appear here</p>
+            </div>
           )}
         </div>
       </div>
@@ -186,25 +141,25 @@ export default function App() {
       {/* RESULT */}
       {result && (
         <div style={styles.result}>
-          <h2>📊 ATS Score: {result?.atsScore}%</h2>
+          <h2>📊 ATS Score: {result.atsScore}%</h2>
 
-          <h3>✅ Skills</h3>
-          {result.skills.map((s, i) => (
-            <span key={i} style={styles.green}>
-              {s}
-            </span>
-          ))}
+          <h3>Skills</h3>
+          <div>
+            {result.skills.map((s,i)=>(
+              <span key={i} style={styles.tagGreen}>{s}</span>
+            ))}
+          </div>
 
-          <h3>❌ Missing Skills</h3>
-          {result.missingSkills.map((s, i) => (
-            <span key={i} style={styles.red}>
-              {s}
-            </span>
-          ))}
+          <h3>Missing Skills</h3>
+          <div>
+            {result.missingSkills.map((s,i)=>(
+              <span key={i} style={styles.tagRed}>{s}</span>
+            ))}
+          </div>
 
-          <h3>💡 Suggestions</h3>
+          <h3>Suggestions</h3>
           <ul>
-            {result.suggestions.map((s, i) => (
+            {result.suggestions.map((s,i)=>(
               <li key={i}>{s}</li>
             ))}
           </ul>
@@ -214,72 +169,116 @@ export default function App() {
   );
 }
 
+// 🔹 INPUT COMPONENT
+const Input = ({ label, value, onChange }) => (
+  <input
+    placeholder={label}
+    value={value}
+    onChange={(e)=>onChange(e.target.value)}
+    style={styles.input}
+  />
+);
+
+// 🎨 STYLES
 const styles = {
-  container: {
-    padding: "20px",
-    fontFamily: "Segoe UI",
-    background: "linear-gradient(135deg, #1e293b, #0f172a)",
-    color: "white",
-    minHeight: "100vh",
+  container:{
+    background:"linear-gradient(135deg,#0f172a,#1e293b)",
+    minHeight:"100vh",
+    color:"white",
+    padding:"20px"
   },
 
-  grid: {
-    display: "flex",
-    gap: "20px",
+  title:{textAlign:"center",marginBottom:"20px"},
+
+  main:{display:"flex",gap:"20px"},
+
+  sidebar:{
+    width:"30%",
+    background:"rgba(255,255,255,0.05)",
+    padding:"20px",
+    borderRadius:"15px",
+    backdropFilter:"blur(10px)"
   },
 
-  card: {
-    width: "40%",
-    background: "#1e293b",
-    padding: "20px",
-    borderRadius: "15px",
+  preview:{
+    width:"70%",
+    background:"white",
+    borderRadius:"15px",
+    padding:"20px",
+    color:"black"
   },
 
-  preview: {
-    width: "60%",
-    background: "white",
-    padding: "20px",
-    borderRadius: "10px",
-    color: "black",
+  input:{
+    width:"100%",
+    padding:"10px",
+    margin:"8px 0",
+    borderRadius:"8px",
+    border:"none"
   },
 
-  input: {
-    display: "block",
-    marginBottom: "10px",
-    padding: "10px",
-    width: "100%",
-    borderRadius: "8px",
-    border: "none",
+  primaryBtn:{
+    width:"100%",
+    padding:"12px",
+    background:"#22c55e",
+    border:"none",
+    borderRadius:"10px",
+    marginTop:"10px",
+    cursor:"pointer",
+    color:"white",
+    fontWeight:"bold"
   },
 
-  button: {
-    padding: "10px 20px",
-    background: "#22c55e",
-    border: "none",
-    borderRadius: "10px",
-    cursor: "pointer",
-    color: "white",
-    marginTop: "10px",
+  secondaryBtn:{
+    width:"100%",
+    padding:"10px",
+    background:"#3b82f6",
+    border:"none",
+    borderRadius:"10px",
+    marginTop:"10px",
+    color:"white"
   },
 
-  result: {
-    marginTop: "20px",
-    background: "#1e293b",
-    padding: "20px",
-    borderRadius: "10px",
+  drop:{
+    marginTop:"10px",
+    padding:"15px",
+    border:"2px dashed #aaa",
+    borderRadius:"10px",
+    textAlign:"center"
   },
 
-  green: {
-    background: "#22c55e",
-    padding: "5px",
-    margin: "5px",
-    display: "inline-block",
+  divider:{
+    height:"1px",
+    background:"#555",
+    margin:"20px 0"
   },
 
-  red: {
-    background: "#ef4444",
-    padding: "5px",
-    margin: "5px",
-    display: "inline-block",
+  empty:{
+    display:"flex",
+    justifyContent:"center",
+    alignItems:"center",
+    height:"100%"
   },
+
+  result:{
+    marginTop:"20px",
+    background:"rgba(255,255,255,0.05)",
+    padding:"20px",
+    borderRadius:"15px"
+  },
+
+  tagGreen:{
+    background:"#22c55e",
+    padding:"5px 10px",
+    margin:"5px",
+    borderRadius:"5px",
+    display:"inline-block"
+  },
+
+  tagRed:{
+    background:"#ef4444",
+    padding:"5px 10px",
+    margin:"5px",
+    borderRadius:"5px",
+    display:"inline-block"
+  }
 };
