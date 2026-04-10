@@ -1,12 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
+import html2pdf from "html2pdf.js";
 
 export default function App() {
-  const [file, setFile] = useState(null);
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  // 🆕 Form state
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -16,288 +12,274 @@ export default function App() {
     education: "",
   });
 
-  // 📤 Upload existing resume
-  const upload = async () => {
-    if (!file) return alert("Select a file");
+  const [template, setTemplate] = useState("modern");
+  const [file, setFile] = useState(null);
+
+  const [result, setResult] = useState(null);
+  const [resumeHTML, setResumeHTML] = useState(null);
+  const [pdfPreview, setPdfPreview] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
+
+  // 🔹 GENERATE RESUME
+  const generateResume = async () => {
+    const res = await axios.post(
+      "http://localhost:3000/api/resume/generate",
+      {
+        ...form,
+        template,
+        skills: form.skills.split(","),
+        projects: form.projects.split(","),
+      }
+    );
+
+    setResult(res.data.analysis);
+    setResumeHTML(res.data.resume);
+    setPdfPreview(null); // clear PDF preview
+  };
+
+  // 🔹 UPLOAD RESUME (PDF)
+  const uploadResume = async () => {
+    if (!file) return alert("Select file");
 
     const formData = new FormData();
     formData.append("resume", file);
 
-    try {
-      setLoading(true);
-      const res = await axios.post(
-        "http://localhost:3000/api/resume/upload",
-        formData
-      );
+    const res = await axios.post(
+      "http://localhost:3000/api/resume/upload",
+      formData
+    );
 
-      setResult(res.data.data.analysis);
-    } catch (err) {
-      console.error(err);
-      alert("Upload failed");
-    } finally {
-      setLoading(false);
+    setResult(res.data.data.analysis);
+
+    // 🔥 PDF Preview
+    const fileURL = URL.createObjectURL(file);
+    setPdfPreview(fileURL);
+
+    setResumeHTML(null);
+  };
+
+  // 🔹 DRAG HANDLERS
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(e.type === "dragenter" || e.type === "dragover");
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setFile(e.dataTransfer.files[0]);
     }
   };
 
-  // 🧠 Generate resume from form
-  const generateResume = async () => {
-    try {
-      setLoading(true);
-
-      const res = await axios.post(
-        "http://localhost:3000/api/resume/generate",
-        {
-          ...form,
-          skills: form.skills.split(",").map(s => s.trim()),
-          projects: form.projects.split(",").map(p => p.trim()),
-        }
-      );
-
-      setResult(res.data.analysis);
-
-      // optional: show resume in console
-      console.log(res.data.resume);
-
-    } catch (err) {
-      console.error(err);
-      alert("Generation failed");
-    } finally {
-      setLoading(false);
-    }
+  // 🔹 DOWNLOAD GENERATED RESUME
+  const downloadPDF = () => {
+    const element = document.getElementById("resume");
+    html2pdf().from(element).save("My_Resume.pdf");
   };
+
+  // 🔹 CLEANUP
+  useEffect(() => {
+    return () => {
+      if (pdfPreview) URL.revokeObjectURL(pdfPreview);
+    };
+  }, [pdfPreview]);
 
   return (
     <div style={styles.container}>
-      <h1 style={styles.title}>🚀 ATS Resume Builder</h1>
+      <h1>🚀 ATS Resume Builder</h1>
 
-      {/* 🔥 MAIN GRID */}
       <div style={styles.grid}>
-
-        {/* 📝 LEFT SIDE - FORM */}
+        
+        {/* LEFT SIDE */}
         <div style={styles.card}>
-          <h2>📝 Create Resume</h2>
+          <h2>Create Resume</h2>
 
-          <input
-            placeholder="Name"
+          {/* TEMPLATE */}
+          <select
+            onChange={(e) => setTemplate(e.target.value)}
             style={styles.input}
-            onChange={(e) =>
-              setForm({ ...form, name: e.target.value })
-            }
-          />
+          >
+            <option value="modern">Modern</option>
+            <option value="classic">Classic</option>
+            <option value="minimal">Minimal</option>
+          </select>
 
-          <input
-            placeholder="Email"
-            style={styles.input}
-            onChange={(e) =>
-              setForm({ ...form, email: e.target.value })
-            }
-          />
-
-          <input
-            placeholder="Skills (comma separated)"
-            style={styles.input}
-            onChange={(e) =>
-              setForm({ ...form, skills: e.target.value })
-            }
-          />
-
-          <input
-            placeholder="Projects (comma separated)"
-            style={styles.input}
-            onChange={(e) =>
-              setForm({ ...form, projects: e.target.value })
-            }
-          />
-
-          <input
-            placeholder="Experience"
-            style={styles.input}
-            onChange={(e) =>
-              setForm({ ...form, experience: e.target.value })
-            }
-          />
-
-          <input
-            placeholder="Education"
-            style={styles.input}
-            onChange={(e) =>
-              setForm({ ...form, education: e.target.value })
-            }
-          />
+          {/* FORM */}
+          {Object.keys(form).map((key) => (
+            <input
+              key={key}
+              placeholder={key}
+              onChange={(e) =>
+                setForm({ ...form, [key]: e.target.value })
+              }
+              style={styles.input}
+            />
+          ))}
 
           <button style={styles.button} onClick={generateResume}>
             Generate Resume
           </button>
+
+          <hr style={{ margin: "20px 0" }} />
+
+          {/* DRAG & DROP */}
+          <h2>Upload Resume</h2>
+
+          <div
+            style={{
+              border: dragActive
+                ? "2px dashed #22c55e"
+                : "2px dashed #ccc",
+              padding: "20px",
+              borderRadius: "10px",
+              textAlign: "center",
+            }}
+            onDragEnter={handleDrag}
+            onDragOver={handleDrag}
+            onDragLeave={handleDrag}
+            onDrop={handleDrop}
+          >
+            <p>📂 Drag & Drop PDF Here</p>
+
+            <input
+              type="file"
+              onChange={(e) => setFile(e.target.files[0])}
+            />
+
+            <button style={styles.button} onClick={uploadResume}>
+              Analyze Resume
+            </button>
+          </div>
         </div>
 
-        {/* 📤 RIGHT SIDE - UPLOAD */}
-        <div style={styles.card}>
-          <h2>📤 Upload Resume</h2>
+        {/* RIGHT SIDE */}
+        <div style={styles.preview}>
+          {/* GENERATED RESUME */}
+          {resumeHTML ? (
+            <>
+              <div
+                id="resume"
+                dangerouslySetInnerHTML={{ __html: resumeHTML }}
+              />
 
-          <input
-            type="file"
-            style={styles.input}
-            onChange={(e) => setFile(e.target.files[0])}
-          />
-
-          <button style={styles.button} onClick={upload}>
-            Analyze Resume
-          </button>
+              <button style={styles.button} onClick={downloadPDF}>
+                Download PDF
+              </button>
+            </>
+          ) : pdfPreview ? (
+            /* PDF PREVIEW */
+            <iframe
+              src={pdfPreview}
+              width="100%"
+              height="500px"
+              title="PDF Preview"
+            />
+          ) : (
+            <p>Preview will appear here</p>
+          )}
         </div>
       </div>
 
-      {/* ⏳ Loading */}
-      {loading && (
-        <p style={styles.loading}>⏳ Processing...</p>
-      )}
-
-      {/* 📊 RESULT */}
+      {/* RESULT */}
       {result && (
-        <div style={styles.resultCard}>
-          {/* ATS Score */}
-          <h2>📊 ATS Score</h2>
-          <div style={styles.progressBar}>
-            <div
-              style={{
-                ...styles.progressFill,
-                width: `${result.atsScore}%`,
-              }}
-            >
-              {result.atsScore}%
-            </div>
-          </div>
+        <div style={styles.result}>
+          <h2>📊 ATS Score: {result?.atsScore}%</h2>
 
-          {/* Skills */}
-          <Section title="✅ Skills">
-            {result.skills.map((skill, i) => (
-              <Tag key={i} text={skill} type="green" />
+          <h3>✅ Skills</h3>
+          {result.skills.map((s, i) => (
+            <span key={i} style={styles.green}>
+              {s}
+            </span>
+          ))}
+
+          <h3>❌ Missing Skills</h3>
+          {result.missingSkills.map((s, i) => (
+            <span key={i} style={styles.red}>
+              {s}
+            </span>
+          ))}
+
+          <h3>💡 Suggestions</h3>
+          <ul>
+            {result.suggestions.map((s, i) => (
+              <li key={i}>{s}</li>
             ))}
-          </Section>
-
-          {/* Missing Skills */}
-          <Section title="❌ Missing Skills">
-            {result.missingSkills.map((skill, i) => (
-              <Tag key={i} text={skill} type="red" />
-            ))}
-          </Section>
-
-          {/* Suggestions */}
-          <Section title="💡 Suggestions">
-            <ul style={{ paddingLeft: "20px" }}>
-              {result.suggestions.map((s, i) => (
-                <li key={i}>{s}</li>
-              ))}
-            </ul>
-          </Section>
+          </ul>
         </div>
       )}
     </div>
   );
 }
 
-/* 🔹 Components */
-
-const Section = ({ title, children }) => (
-  <div style={{ marginTop: "20px" }}>
-    <h3>{title}</h3>
-    <div style={{ marginTop: "10px" }}>{children}</div>
-  </div>
-);
-
-const Tag = ({ text, type }) => (
-  <span
-    style={{
-      ...styles.tag,
-      background: type === "green" ? "#22c55e" : "#ef4444",
-    }}
-  >
-    {text}
-  </span>
-);
-
-/* 🎨 Styles */
-
 const styles = {
   container: {
-    fontFamily: "Segoe UI",
     padding: "20px",
-    background: "linear-gradient(to right, #667eea, #764ba2)",
-    minHeight: "100vh",
-  },
-
-  title: {
-    textAlign: "center",
+    fontFamily: "Segoe UI",
+    background: "linear-gradient(135deg, #1e293b, #0f172a)",
     color: "white",
-    marginBottom: "30px",
+    minHeight: "100vh",
   },
 
   grid: {
     display: "flex",
     gap: "20px",
-    justifyContent: "center",
   },
 
   card: {
+    width: "40%",
+    background: "#1e293b",
+    padding: "20px",
+    borderRadius: "15px",
+  },
+
+  preview: {
+    width: "60%",
     background: "white",
     padding: "20px",
-    borderRadius: "12px",
-    width: "300px",
-    boxShadow: "0 10px 20px rgba(0,0,0,0.2)",
+    borderRadius: "10px",
+    color: "black",
   },
 
   input: {
     display: "block",
-    width: "100%",
     marginBottom: "10px",
-    padding: "8px",
+    padding: "10px",
+    width: "100%",
+    borderRadius: "8px",
+    border: "none",
   },
 
   button: {
-    width: "100%",
-    padding: "10px",
-    background: "#111",
-    color: "white",
+    padding: "10px 20px",
+    background: "#22c55e",
     border: "none",
-    borderRadius: "6px",
+    borderRadius: "10px",
     cursor: "pointer",
+    color: "white",
+    marginTop: "10px",
   },
 
-  loading: {
-    textAlign: "center",
-    color: "white",
+  result: {
     marginTop: "20px",
-  },
-
-  resultCard: {
-    marginTop: "30px",
-    background: "white",
+    background: "#1e293b",
     padding: "20px",
-    borderRadius: "12px",
-    width: "60%",
-    marginInline: "auto",
+    borderRadius: "10px",
   },
 
-  progressBar: {
-    width: "100%",
-    height: "25px",
-    background: "#eee",
-    borderRadius: "20px",
-    overflow: "hidden",
-  },
-
-  progressFill: {
-    height: "100%",
-    background: "green",
-    color: "white",
-    textAlign: "center",
-    lineHeight: "25px",
-  },
-
-  tag: {
-    color: "white",
-    padding: "5px 10px",
+  green: {
+    background: "#22c55e",
+    padding: "5px",
     margin: "5px",
-    borderRadius: "20px",
+    display: "inline-block",
+  },
+
+  red: {
+    background: "#ef4444",
+    padding: "5px",
+    margin: "5px",
     display: "inline-block",
   },
 };
