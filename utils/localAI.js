@@ -30,7 +30,12 @@ export const analyzeResumeLocal = (text) => {
   if (!text.toLowerCase().includes("experience")) {
     suggestions.push("Add experience section");
   }
-
+  if (score < 50) {
+    suggestions.push("Your resume is weak for ATS");
+  }
+  if (!text.includes("github")) {
+    suggestions.push("Add GitHub profile");
+  }
   return {
     atsScore: Math.round(score),
     skills: foundSkills,

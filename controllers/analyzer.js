@@ -2,7 +2,7 @@ import fs from "fs";
 import Resume from "../models/Resume.js";
 import { parseResume } from "../utils/parser.js";
 import { analyzeResumeLocal } from "../utils/localAI.js";
-
+import { generateResume } from "../utils/generator.js";
 export const analyzeResume = async (req, res) => {
   try {
     if (!req.file) {
@@ -25,6 +25,20 @@ export const analyzeResume = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
+export const generateResumeHandler = (req, res) => {
+  try {
+    const resume = generateResume(req.body);
+
+    const analysis = analyzeResumeLocal(resume);
+
+    res.json({
+      resume,
+      analysis,
+    });
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };

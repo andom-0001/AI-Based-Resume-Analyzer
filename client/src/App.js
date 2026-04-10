@@ -6,6 +6,17 @@ export default function App() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // 🆕 Form state
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    skills: "",
+    projects: "",
+    experience: "",
+    education: "",
+  });
+
+  // 📤 Upload existing resume
   const upload = async () => {
     if (!file) return alert("Select a file");
 
@@ -18,6 +29,7 @@ export default function App() {
         "http://localhost:3000/api/resume/upload",
         formData
       );
+
       setResult(res.data.data.analysis);
     } catch (err) {
       console.error(err);
@@ -27,27 +39,122 @@ export default function App() {
     }
   };
 
+  // 🧠 Generate resume from form
+  const generateResume = async () => {
+    try {
+      setLoading(true);
+
+      const res = await axios.post(
+        "http://localhost:3000/api/resume/generate",
+        {
+          ...form,
+          skills: form.skills.split(",").map(s => s.trim()),
+          projects: form.projects.split(",").map(p => p.trim()),
+        }
+      );
+
+      setResult(res.data.analysis);
+
+      // optional: show resume in console
+      console.log(res.data.resume);
+
+    } catch (err) {
+      console.error(err);
+      alert("Generation failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div style={styles.container}>
-      <h1 style={styles.title}>🚀 AI Resume Analyzer</h1>
+      <h1 style={styles.title}>🚀 ATS Resume Builder</h1>
 
-      {/* Upload Card */}
-      <div style={styles.card}>
-        <input
-          type="file"
-          onChange={(e) => setFile(e.target.files[0])}
-          style={styles.input}
-        />
-        <button onClick={upload} style={styles.button}>
-          Analyze Resume
-        </button>
+      {/* 🔥 MAIN GRID */}
+      <div style={styles.grid}>
+
+        {/* 📝 LEFT SIDE - FORM */}
+        <div style={styles.card}>
+          <h2>📝 Create Resume</h2>
+
+          <input
+            placeholder="Name"
+            style={styles.input}
+            onChange={(e) =>
+              setForm({ ...form, name: e.target.value })
+            }
+          />
+
+          <input
+            placeholder="Email"
+            style={styles.input}
+            onChange={(e) =>
+              setForm({ ...form, email: e.target.value })
+            }
+          />
+
+          <input
+            placeholder="Skills (comma separated)"
+            style={styles.input}
+            onChange={(e) =>
+              setForm({ ...form, skills: e.target.value })
+            }
+          />
+
+          <input
+            placeholder="Projects (comma separated)"
+            style={styles.input}
+            onChange={(e) =>
+              setForm({ ...form, projects: e.target.value })
+            }
+          />
+
+          <input
+            placeholder="Experience"
+            style={styles.input}
+            onChange={(e) =>
+              setForm({ ...form, experience: e.target.value })
+            }
+          />
+
+          <input
+            placeholder="Education"
+            style={styles.input}
+            onChange={(e) =>
+              setForm({ ...form, education: e.target.value })
+            }
+          />
+
+          <button style={styles.button} onClick={generateResume}>
+            Generate Resume
+          </button>
+        </div>
+
+        {/* 📤 RIGHT SIDE - UPLOAD */}
+        <div style={styles.card}>
+          <h2>📤 Upload Resume</h2>
+
+          <input
+            type="file"
+            style={styles.input}
+            onChange={(e) => setFile(e.target.files[0])}
+          />
+
+          <button style={styles.button} onClick={upload}>
+            Analyze Resume
+          </button>
+        </div>
       </div>
 
-      {loading && <p style={styles.loading}>⏳ Analyzing your resume...</p>}
+      {/* ⏳ Loading */}
+      {loading && (
+        <p style={styles.loading}>⏳ Processing...</p>
+      )}
 
+      {/* 📊 RESULT */}
       {result && (
         <div style={styles.resultCard}>
-          {/* Score */}
+          {/* ATS Score */}
           <h2>📊 ATS Score</h2>
           <div style={styles.progressBar}>
             <div
@@ -78,7 +185,7 @@ export default function App() {
           <Section title="💡 Suggestions">
             <ul style={{ paddingLeft: "20px" }}>
               {result.suggestions.map((s, i) => (
-                <li key={i} style={{ marginBottom: "5px" }}>{s}</li>
+                <li key={i}>{s}</li>
               ))}
             </ul>
           </Section>
@@ -88,7 +195,7 @@ export default function App() {
   );
 }
 
-/* 🔹 Reusable Components */
+/* 🔹 Components */
 
 const Section = ({ title, children }) => (
   <div style={{ marginTop: "20px" }}>
@@ -112,85 +219,85 @@ const Tag = ({ text, type }) => (
 
 const styles = {
   container: {
-    textAlign: "center",
-    fontFamily: "Segoe UI, sans-serif",
+    fontFamily: "Segoe UI",
     padding: "20px",
-    minHeight: "100vh",
     background: "linear-gradient(to right, #667eea, #764ba2)",
-    color: "#333",
+    minHeight: "100vh",
   },
 
   title: {
+    textAlign: "center",
     color: "white",
     marginBottom: "30px",
-    fontSize: "2rem",
+  },
+
+  grid: {
+    display: "flex",
+    gap: "20px",
+    justifyContent: "center",
   },
 
   card: {
     background: "white",
-    padding: "25px",
-    borderRadius: "15px",
-    boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
-    display: "inline-block",
+    padding: "20px",
+    borderRadius: "12px",
+    width: "300px",
+    boxShadow: "0 10px 20px rgba(0,0,0,0.2)",
   },
 
   input: {
-    marginBottom: "15px",
+    display: "block",
+    width: "100%",
+    marginBottom: "10px",
+    padding: "8px",
   },
 
   button: {
-    padding: "12px 25px",
+    width: "100%",
+    padding: "10px",
     background: "#111",
     color: "white",
     border: "none",
-    borderRadius: "8px",
+    borderRadius: "6px",
     cursor: "pointer",
-    fontSize: "16px",
-    transition: "0.3s",
   },
 
   loading: {
+    textAlign: "center",
     color: "white",
     marginTop: "20px",
-    fontSize: "18px",
   },
 
   resultCard: {
     marginTop: "30px",
     background: "white",
-    padding: "25px",
-    borderRadius: "15px",
+    padding: "20px",
+    borderRadius: "12px",
     width: "60%",
     marginInline: "auto",
-    boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
-    textAlign: "left",
   },
 
   progressBar: {
     width: "100%",
-    height: "30px",
-    background: "#e5e7eb",
+    height: "25px",
+    background: "#eee",
     borderRadius: "20px",
     overflow: "hidden",
-    marginBottom: "15px",
   },
 
   progressFill: {
     height: "100%",
-    background: "linear-gradient(to right, #22c55e, #16a34a)",
+    background: "green",
     color: "white",
     textAlign: "center",
-    lineHeight: "30px",
-    fontWeight: "bold",
-    transition: "width 0.5s ease",
+    lineHeight: "25px",
   },
 
   tag: {
     color: "white",
-    padding: "6px 12px",
+    padding: "5px 10px",
     margin: "5px",
     borderRadius: "20px",
     display: "inline-block",
-    fontSize: "14px",
   },
 };
