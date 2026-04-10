@@ -26,7 +26,6 @@ export const analyzeResumeLocal = (text) => {
   if (foundSkills.length < 5) suggestions.push("Add more skills.");
   if (!text.includes("project")) suggestions.push("Add projects.");
   if (!text.includes("experience")) suggestions.push("Add experience.");
-  if (!text.includes("github")) suggestions.push("Add GitHub.");
   if (text.length < 300) suggestions.push("Increase content.");
 
   return {
