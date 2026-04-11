@@ -65,7 +65,7 @@ export default function App() {
 
   return (
     <div style={styles.container}>
-      <h1 style={styles.title}>🚀 ATS Resume Builder</h1>
+      <h1 style={styles.title}>🚀 ATS Resume Builder And Analyzer</h1>
 
       <div style={styles.main}>
         
@@ -104,7 +104,7 @@ export default function App() {
 
           <div style={styles.divider}/>
 
-          <h3>Upload Resume</h3>
+          <h3>📄Upload Resume</h3>
 
           <div style={styles.drop}>
             <input type="file"
@@ -132,7 +132,7 @@ export default function App() {
               width="100%" height="600px"/>
           ) : (
             <div style={styles.empty}>
-              <p>✨ Your Resume Preview will appear here</p>
+              <p>✨Your Resume Preview will appear here</p>
             </div>
           )}
         </div>
