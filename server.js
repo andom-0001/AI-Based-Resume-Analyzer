@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import resumeRoutes from "./routes/resumeRoutes.js";
 import { connectDB } from "./config/db.js";
+
 const app = express();
 
 connectDB();
