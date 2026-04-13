@@ -2,12 +2,13 @@ import express from "express";
 import cors from "cors";
 import resumeRoutes from "./routes/resumeRoutes.js";
 import { connectDB } from "./config/db.js";
-
+import authRoutes from "./routes/authRoutes.js";
 const app = express();
 
 connectDB();
 
 app.use(cors());
+app.use("/api/auth", authRoutes);
 app.use(express.json());
 
 app.get("/", (req, res) => {
