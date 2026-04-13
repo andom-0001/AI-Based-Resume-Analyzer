@@ -4,38 +4,24 @@ import { parseResume } from "../utils/parser.js";
 import { analyzeResumeLocal } from "../utils/localAI.js";
 import { generateResumeHTML } from "../utils/generator.js";
 
-// 🔹 Upload Resume
 export const analyzeResume = async (req, res) => {
-  const text = await parseResume(req.file.path, req.file.mimetype);
-  const result = analyzeResumeLocal(text);
+  try {
+    const text = await parseResume(req.file.path, req.file.mimetype);
+    const result = analyzeResumeLocal(text);
 
-  await Resume.create({
-    userId: req.userId,
-    analysis: result,
-  });
+    fs.unlinkSync(req.file.path);
 
-  fs.unlinkSync(req.file.path);
-
-  res.json({ analysis: result });
+    res.json({ data: { analysis: result } });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 
-// 🔹 Generate Resume
-export const generateResumeHandler = async (req, res) => {
-  const { template, theme, ...data } = req.body;
+export const generateResumeHandler = (req, res) => {
+  const { template, ...data } = req.body;
 
-  const html = generateResumeHTML(data, template, theme);
+  const html = generateResumeHTML(data, template);
   const analysis = analyzeResumeLocal(html);
 
-  await Resume.create({
-    userId: req.userId,
-    analysis,
-  });
-
   res.json({ resume: html, analysis });
-};
-
-// 🔹 Get user resumes
-export const getMyResumes = async (req, res) => {
-  const resumes = await Resume.find({ userId: req.userId });
-  res.json(resumes);
 };

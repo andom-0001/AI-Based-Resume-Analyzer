@@ -1,17 +1,11 @@
 import express from "express";
 import multer from "multer";
-import {
-  analyzeResume,
-  generateResumeHandler,
-  getMyResumes
-} from "../controllers/analyzer.js";
-import { authMiddleware } from "../middleware/authMiddleware.js";
+import { analyzeResume, generateResumeHandler } from "../controllers/analyzer.js";
 
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
-router.post("/upload", authMiddleware, upload.single("resume"), analyzeResume);
-router.post("/generate", authMiddleware, generateResumeHandler);
-router.get("/my", authMiddleware, getMyResumes);
+router.post("/upload", upload.single("resume"), analyzeResume);
+router.post("/generate", generateResumeHandler);
 
 export default router;
