@@ -128,7 +128,9 @@ export default function App() {
               </button>
             </>
           ) : pdfPreview ? (
-            <iframe src={pdfPreview}
+            <iframe
+              title="Resume PDF Preview"
+              src={pdfPreview}
               width="100%" height="600px"/>
           ) : (
             <div style={styles.empty}>
